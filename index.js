@@ -1,6 +1,6 @@
 const POPULATION_QTY = 100
 const BOARD_SIZE = 8
-const ALGORITHM_RUNS = 100
+const ALGORITHM_RUNS = 1000
 const GENE_MUTATION_RATE = 40
 const FITNESS_THRESHOLD = 4
 
@@ -159,5 +159,3 @@ while (count < ALGORITHM_RUNS) {
 console.log(`  Numero de execuções: ${count}, Numero Maximo de gerações: ${MAX_GENERATIONS}, Numero Minimo de gerações: ${MIN_GENERATIONS},
     Gerações até convergir (Média): ${AVG_GENERATIONS_UNTIL_CONVERGE / ALGORITHM_RUNS}, Tempo maximo de execução: ${maxTime}, Tempo minimo de exercução: ${minTime},
     Tempo médio de execução: ${timeAverage / ALGORITHM_RUNS} \n`)
-
-console.log(timeAverage, timeAverage / ALGORITHM_RUNS)
