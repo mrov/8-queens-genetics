@@ -2,6 +2,7 @@ const POPULATION_QTY = 100
 const BOARD_SIZE = 8
 const ALGORITHM_RUNS = 1000
 const GENE_MUTATION_RATE = 40
+const FITNESS_EVALUATIONS_LIMIT = 10000
 
 // Vai ver quantas colisões tem para determinado board
 // Idealmente as rainhas nunca estarão na mesma coluna, ja que cada indice é uma coluna
@@ -24,20 +25,22 @@ function fitnessMeasure(board) {
 
 // Controladores de execução e de tempo e contador de geração
 var count = 0
-var condition = true
+var notHasSolution = true
 var timeAverage = 0
 var maxTime = 0
 var minTime = 30000
 var MIN_GENERATIONS = 100000000
 var MAX_GENERATIONS = 0
 var AVG_GENERATIONS_UNTIL_CONVERGE = 0
+var foundSolution = 0
 
 while (count < ALGORITHM_RUNS) {
     var timeIn = new Date()
-    var condition = true
+    var notHasSolution = true
     var GENERATIONS_UNTIL_CONVERGE = 0
+    var Fitness_evaluations = 0
     // Roda aleatoriamente até achar a solução
-    while (condition) {
+    while (notHasSolution && Fitness_evaluations < FITNESS_EVALUATIONS_LIMIT) {
         var populationList = []
         // Criar a primeira geração
         for (let population = 0; population < POPULATION_QTY; population++) {
@@ -51,9 +54,12 @@ while (count < ALGORITHM_RUNS) {
         // console.log(populationList)
 
         populationList.forEach(board => {
+            Fitness_evaluations++
             if (fitnessMeasure(board) < 1) {
                 // console.log(board)
-                condition = false
+                Fitness_evaluations--
+                notHasSolution = false
+                foundSolution++
             }
         });
         GENERATIONS_UNTIL_CONVERGE++
@@ -68,9 +74,9 @@ while (count < ALGORITHM_RUNS) {
     count++
     console.log(`   Execução N: ${count}, Numero Maximo de gerações: ${MAX_GENERATIONS}, Numero Minimo de gerações: ${MIN_GENERATIONS}
     Gerações até convergir: ${GENERATIONS_UNTIL_CONVERGE}, Tempo maximo de execução: ${maxTime}, Tempo minimo de exercução: ${minTime},
-    Tempo médio de execução até agora: ${(timeAverage / count).toFixed(2)} \n`)
+    Tempo médio de execução até agora: ${(timeAverage / count).toFixed(2)}, Encontrou solução: ${notHasSolution ? "Não" : "Sim"} \n`)
 }
 
 console.log(`  Numero de execuções: ${count}, Numero Maximo de gerações: ${MAX_GENERATIONS}, Numero Minimo de gerações: ${MIN_GENERATIONS},
     Gerações até convergir (Média): ${AVG_GENERATIONS_UNTIL_CONVERGE / ALGORITHM_RUNS}, Tempo maximo de execução: ${maxTime}, Tempo minimo de exercução: ${minTime},
-    Tempo médio de execução: ${timeAverage / ALGORITHM_RUNS} \n`)
+    Tempo médio de execução: ${timeAverage / ALGORITHM_RUNS}, Encontrou ${foundSolution} Soluções \n`)
