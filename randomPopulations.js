@@ -1,7 +1,7 @@
-const POPULATION_QTY = 10
+const POPULATION_QTY = 100
 const BOARD_SIZE = 8
-const ALGORITHM_RUNS = 10
-const GENE_MUTATION_RATE = 60
+const ALGORITHM_RUNS = 100
+const GENE_MUTATION_RATE = 40
 
 // Vai ver quantas colisões tem para determinado board
 // Idealmente as rainhas nunca estarão na mesma coluna, ja que cada indice é uma coluna

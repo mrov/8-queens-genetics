@@ -1,8 +1,13 @@
-const POPULATION_QTY = 1000
+const POPULATION_QTY = 100
 const BOARD_SIZE = 8
-const ALGORITHM_RUNS = 1000
-const GENE_MUTATION_RATE = 30
+const ALGORITHM_RUNS = 100
+const GENE_MUTATION_RATE = 40
 const FITNESS_THRESHOLD = 4
+
+// Algoritmo roleta para seleção dos parentes
+function roulleteSelection (currentPopulation) {
+
+}
 
 // Vai ver quantas colisões tem para determinado board
 // Idealmente as rainhas nunca estarão na mesma coluna, ja que cada indice é uma coluna
@@ -99,17 +104,21 @@ function populationCrossOver (selectedParents) {
 
 // makeCrossover([[2,3,5,4,0,1,6,7], [0,5,4,3,6,7,1,2]])
 
-// Controladores de execução e de tempo
+// Controladores de execução e de tempo e contador de geração
 var count = 0
 var condition = true
 var timeAverage = 0
 var maxTime = 0
 var minTime = 30000
+var MIN_GENERATIONS = 100000000
+var MAX_GENERATIONS = 0
+var AVG_GENERATIONS_UNTIL_CONVERGE = 0
 
 while (count < ALGORITHM_RUNS) {
     var timeIn = new Date()
     var condition = true
     var populationList = []
+    var GENERATIONS_UNTIL_CONVERGE = 0
     // Criar a primeira geração
     for (let population = 0; population < POPULATION_QTY; population++) {
         populationList.push(generateRandom())
@@ -132,13 +141,23 @@ while (count < ALGORITHM_RUNS) {
             populationList = mutateGenes(crossOveredPopulation)
         }
         // console.log(fitnessList)
+        GENERATIONS_UNTIL_CONVERGE++
     }
     var timeOut = new Date()
     timeAverage += timeOut - timeIn
     maxTime = Math.max(timeOut - timeIn, maxTime)
     minTime = Math.min(timeOut - timeIn, minTime)
+    MAX_GENERATIONS = Math.max(MAX_GENERATIONS, GENERATIONS_UNTIL_CONVERGE)
+    MIN_GENERATIONS = Math.min(MIN_GENERATIONS, GENERATIONS_UNTIL_CONVERGE)
+    AVG_GENERATIONS_UNTIL_CONVERGE += GENERATIONS_UNTIL_CONVERGE
     count++
-    console.log(count, maxTime, minTime, (timeAverage / count).toFixed(2))
+    console.log(`   Execução N: ${count}, Numero Maximo de gerações: ${MAX_GENERATIONS}, Numero Minimo de gerações: ${MIN_GENERATIONS}
+    Gerações até convergir: ${GENERATIONS_UNTIL_CONVERGE}, Tempo maximo de execução: ${maxTime}, Tempo minimo de exercução: ${minTime},
+    Tempo médio de execução até agora: ${(timeAverage / count).toFixed(2)} \n`)
 }
+
+console.log(`  Numero de execuções: ${count}, Numero Maximo de gerações: ${MAX_GENERATIONS}, Numero Minimo de gerações: ${MIN_GENERATIONS},
+    Gerações até convergir (Média): ${AVG_GENERATIONS_UNTIL_CONVERGE / ALGORITHM_RUNS}, Tempo maximo de execução: ${maxTime}, Tempo minimo de exercução: ${minTime},
+    Tempo médio de execução: ${timeAverage / ALGORITHM_RUNS} \n`)
 
 console.log(timeAverage, timeAverage / ALGORITHM_RUNS)
