@@ -1,9 +1,20 @@
+// Modificação grande desse algoritmo para os anteriores é que cada board, além do genótipo, ele será um objeto composto de genótipo e fitness e outras variantes
+// Indv vai ser a abreviação para individuo nesse codigo
+// Exemplo de Indv: { board: [boardSize], fitness: 0-colisões }
 const POPULATION_QTY = 100
 const BOARD_SIZE = 8
 const ALGORITHM_RUNS = 1000
 const GENE_MUTATION_RATE = 40
 const FITNESS_EVALUATIONS_LIMIT = 10000
 const FITNESS_THRESHOLD = 3
+const RANKING_LENGTH = 5
+
+// Função para utilizar no sort
+function compararFitness (a,b) {
+    if (a.fitness < b.fitness) { return -1 }
+    if (a.fitness > b.fitness) { return 1 }
+    return 0
+}
 
 // Algoritmo roleta para seleção dos parentes
 function roulleteSelection (currentPopulation) {
@@ -14,6 +25,7 @@ function roulleteSelection (currentPopulation) {
 // Idealmente as rainhas nunca estarão na mesma coluna, ja que cada indice é uma coluna
 function fitnessMeasure(board) {
     var colisions = 0
+    Fitness_evaluations++
     // para cada rainha eu tenho que analisar se há colisões do tipo diagonal ou na mesma linha
     board.forEach((queenRow, queenColumn) => {
         for (let nextQueenColumn = queenColumn+1; nextQueenColumn < board.length; nextQueenColumn++) {
@@ -30,12 +42,12 @@ function fitnessMeasure(board) {
 }
 
 // Seto a porcentagem de genes que quero mutar aleatóriamente
-function mutateGenes (newPopulation) {
+function mutateGenes (children) {
     // console.log(newPopulation)
-    var mutatedPopulation = newPopulation.map((board, boardIndex) => {
+    var mutatedPopulation = children.map((individual, boardIndex) => {
         // Calcular quantos genes deve ser alterados nessa mutação dado a porcentagem
-        var mutatedBoard = [...board]
-        var genesLength = board.length
+        var mutatedBoard = [...individual.board]
+        var genesLength = individual.board.length
         var mutateGenesQty = Math.round(genesLength * (GENE_MUTATION_RATE / 100))
         // Alterar os genes aleatoriamente
         for (let i = 0; i < mutateGenesQty; i++) {
@@ -45,7 +57,7 @@ function mutateGenes (newPopulation) {
             mutatedBoard[randomIndex] = mutatedGene
         }
         // console.log(board, mutatedBoard)
-        return mutatedBoard
+        return { board: mutatedBoard, fitness: }
     });
     // console.log('aaaaaaaaaaaaaaaaa', mutatedPopulation)
     return mutatedPopulation
@@ -53,11 +65,13 @@ function mutateGenes (newPopulation) {
 
 // Gera um board aleatório
 function generateRandom () {
+    var indv = { board: [], fitness: Math.pow(BOARD_SIZE, 2) }
     var board = []
     for (let queen = 0; queen < BOARD_SIZE; queen++) {
         board.push(Math.floor(Math.random() * BOARD_SIZE))
     }
-    return board
+    indv.board = board
+    return indv
 }
 
 // Criar uma matriz de fitness para a população atual e selecionar os melhores e descartar os piores dado um determinado limiar
@@ -77,31 +91,59 @@ function selectParentsByFitness (currentPopulation, fitnessList) {
 }
 
 
+// A ideia aqui é selecionar 5 individuos da população e escolher os com melhor fitness
+// Como a população ja vem ordenada do menor fitness para o maior só pegar os menores indices dos numeros aleatórios gerádos que serão os melhores dos 5
+function selectParentsByRanking (currentPopulation) {
+    var selectedParentsIndexes = []
+    for (let index = 0; index < RANKING_LENGTH; index++) {
+        var possibleParentIndex = Math.round(Math.random() * (currentPopulation.length - 1))
+        selectedParentsIndexes.push(possibleParentIndex)
+    }
+    selectedParentsIndexes.sort()
+    return [currentPopulation[selectedParentsIndexes[0]].board, currentPopulation[selectedParentsIndexes[1]].board]
+}
 
-// Vou receber os N pais e vou fazer um crossover deles, pegando 70% do de maior fitness e 30% do de menor dos 2
-function makeCrossover (parentsGenotipes) {
-    var newBoard = []
+function cutAndCrossfill (parentsGenotipes) {
+    var children = []
     // console.log(parentsGenotipes)
     var firstParentPercentageIndex = Math.round(parentsGenotipes[0].length * (0.7))
     var secondParentPercentageIndex = Math.round(parentsGenotipes[1].length * (0.3))
     var firstPart = parentsGenotipes[0].slice(0, firstParentPercentageIndex)
     var secondPart = parentsGenotipes[1].slice(firstParentPercentageIndex)
     var crossOver = firstPart.concat(secondPart)
-    return crossOver
+    children.push({ board: crossOver, fitness: Math.pow(BOARD_SIZE, 2) })
+    var firstPart = parentsGenotipes[1].slice(0, firstParentPercentageIndex)
+    var secondPart = parentsGenotipes[0].slice(firstParentPercentageIndex)
+    var crossOver = firstPart.concat(secondPart)
+    children.push({ board: crossOver, fitness: Math.pow(BOARD_SIZE, 2) })
+    return children
 }
 
-function populationCrossOver (selectedParents) {
-    var crossOveredPopulation = []
-    for (let i = 0; i < POPULATION_QTY; i++) {
-        var parentsToCross = []
-        var firstRandomIndex = Math.round(Math.random() * (selectedParents.length - 1))
-        var secondRandomIndex = Math.round(Math.random() * (selectedParents.length - 1))
-        parentsToCross.push(selectedParents[firstRandomIndex])
-        parentsToCross.push(selectedParents[secondRandomIndex])
-        crossOveredPopulation.push(makeCrossover(parentsToCross))
-    }
-    return crossOveredPopulation
-}
+// Random combination
+// function populationCrossOver (selectedParents) {
+//     var crossOveredPopulation = []
+//     for (let i = 0; i < POPULATION_QTY; i++) {
+//         var parentsToCross = []
+//         var firstRandomIndex = Math.round(Math.random() * (selectedParents.length - 1))
+//         var secondRandomIndex = Math.round(Math.random() * (selectedParents.length - 1))
+//         parentsToCross.push(selectedParents[firstRandomIndex])
+//         parentsToCross.push(selectedParents[secondRandomIndex])
+//         crossOveredPopulation.push(makeCrossover(parentsToCross))
+//     }
+//     return crossOveredPopulation
+// }
+
+// Vou receber os N pais e vou fazer um crossover deles, pegando 70% do de maior fitness e 30% do de menor dos 2
+// function makeCrossover (parentsGenotipes) {
+//     var newBoard = []
+//     // console.log(parentsGenotipes)
+//     var firstParentPercentageIndex = Math.round(parentsGenotipes[0].length * (0.7))
+//     var secondParentPercentageIndex = Math.round(parentsGenotipes[1].length * (0.3))
+//     var firstPart = parentsGenotipes[0].slice(0, firstParentPercentageIndex)
+//     var secondPart = parentsGenotipes[1].slice(firstParentPercentageIndex)
+//     var crossOver = firstPart.concat(secondPart)
+//     return crossOver
+// }
 
 // makeCrossover([[2,3,5,4,0,1,6,7], [0,5,4,3,6,7,1,2]])
 
@@ -129,22 +171,26 @@ while (count < ALGORITHM_RUNS) {
     // Roda aleatoriamente até achar a solução
     while (notHasSolution && Fitness_evaluations < FITNESS_EVALUATIONS_LIMIT) {
         var fitnessList = []
-        populationList.forEach((board, boardIndex) => {
-            fitnessList.push(fitnessMeasure(board))
-            Fitness_evaluations++
-            if (fitnessList[boardIndex] === 0) {
-                // console.log(board)
-                Fitness_evaluations--
+        populationList.forEach((indv, indvIndex) => {
+            indv.fitness = fitnessMeasure(indv.board)
+            if (fitnessList[indvIndex] === 0) {
+                // console.log(indv)
                 notHasSolution = false
                 foundSolution++
             }
         });
+        
+        // Sort Na população pelo fitness
+        populationList.sort(compararFitness)
 
         if (notHasSolution) {
-            var selectedParents = selectParentsByFitness(populationList, fitnessList)
+            // var selectedParents = selectParentsByFitness(populationList)
+            // Retorna apenas o genótipo na selectParents
+            var selectedParentsGenotipes = selectParentsByRanking(populationList)
+            // Retorna ja um individuo com fitness muito alto na cutAndCrossfill
+            var crossOveredChildren = cutAndCrossfill(selectedParentsGenotipes)
             // console.log('Pais selecionados: ', selectedParents.length)
-            var crossOveredPopulation = populationCrossOver(selectedParents)
-            populationList = mutateGenes(crossOveredPopulation)
+            mutatedChildren = mutateGenes(crossOveredChildren)
         }
         // console.log(fitnessList)
         GENERATIONS_UNTIL_CONVERGE++
