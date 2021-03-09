@@ -95,7 +95,7 @@ function generateRandom () {
 
 // Criar uma matriz de fitness para a população atual e selecionar os melhores e descartar os piores dado um determinado limiar
 function selectParentsByFitness (currentPopulation) {
-    return [currentPopulation[selectedParentsIndexes[0]].board, currentPopulation[selectedParentsIndexes[1]].board]
+    return [currentPopulation[0].board, currentPopulation[1].board]
 }
 
 
@@ -109,15 +109,6 @@ function selectParentsByRanking (currentPopulation) {
     }
     selectedParentsIndexes.sort()
     return [currentPopulation[selectedParentsIndexes[0]].board, currentPopulation[selectedParentsIndexes[1]].board]
-}
-
-// Algoritmo roleta para seleção dos parentes
-function roulleteSelection (currentPopulation) {
-    var fitnessTotal = 0
-    currentPopulation.forEach(indv => {
-        fitnessTotal += indv.fitness
-    });
-    console.log(fitnessTotal)
 }
 
 function cutAndCrossfill (parentsGenotipes) {
@@ -171,9 +162,9 @@ while (count < ALGORITHM_RUNS) {
         populationList = populationList.sort(compararFitness)
 
         if (notHasSolution) {
-            // var selectedParents = selectParentsByFitness(populationList)
+            var selectedParentsGenotipes = selectParentsByFitness(populationList)
             // Retorna apenas o genótipo na selectParents
-            var selectedParentsGenotipes = selectParentsByRanking(populationList)
+            // var selectedParentsGenotipes = selectParentsByRanking(populationList)
             // Retorna ja um individuo com fitness muito alto na cutAndCrossfill
             var crossOveredChildren = cutAndCrossfill(selectedParentsGenotipes)
             // console.log('Pais selecionados: ', selectedParents.length)
