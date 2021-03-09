@@ -1,7 +1,7 @@
 // Modificação grande desse algoritmo para os anteriores é que cada board, além do genótipo, ele será um objeto composto de genótipo e fitness e outras variantes
 // Indv vai ser a abreviação para individuo nesse codigo
 // Exemplo de Indv: { board: [boardSize], fitness: 0-colisões }
-const POPULATION_QTY = 100
+const POPULATION_QTY = 10
 const BOARD_SIZE = 8
 const ALGORITHM_RUNS = 1000
 const GENE_MUTATION_RATE = 40
@@ -57,10 +57,28 @@ function mutateGenes (children) {
             mutatedBoard[randomIndex] = mutatedGene
         }
         // console.log(board, mutatedBoard)
-        return { board: mutatedBoard, fitness: }
+        return { board: mutatedBoard, fitness: fitnessMeasure(mutatedBoard) }
     });
     // console.log('aaaaaaaaaaaaaaaaa', mutatedPopulation)
     return mutatedPopulation
+}
+
+function replaceWorse (currentPopulation, newChildren) {
+    var _currentPopulation = currentPopulation
+
+    // console.log('population: ' , _currentPopulation, 'Children: ', newChildren)
+    newChildren.forEach((child, childIndex) => {
+        var replaced = false
+        for (let index = _currentPopulation.length - 1; (index >= 0 && !replaced); index--) {
+            const element = _currentPopulation[index];
+            if (element.fitness > child.fitness) { _currentPopulation[index] = child; replaced = true }
+            // console.log(child.fitness, element.fitness)
+        }
+    });
+
+    // _currentPopulation = _currentPopulation.splice(2, _currentPopulation.length-2)
+    // _currentPopulation = _currentPopulation.concat(newChildren)
+    return _currentPopulation
 }
 
 // Gera um board aleatório
@@ -71,6 +89,7 @@ function generateRandom () {
         board.push(Math.floor(Math.random() * BOARD_SIZE))
     }
     indv.board = board
+    indv.fitness = fitnessMeasure(board)
     return indv
 }
 
@@ -170,18 +189,15 @@ while (count < ALGORITHM_RUNS) {
     }
     // Roda aleatoriamente até achar a solução
     while (notHasSolution && Fitness_evaluations < FITNESS_EVALUATIONS_LIMIT) {
-        var fitnessList = []
-        populationList.forEach((indv, indvIndex) => {
-            indv.fitness = fitnessMeasure(indv.board)
-            if (fitnessList[indvIndex] === 0) {
-                // console.log(indv)
-                notHasSolution = false
-                foundSolution++
-            }
-        });
         
+        if (populationList.some(function (indv) { return indv.fitness === 0 })) {
+            // console.log(indv)
+            notHasSolution = false
+            foundSolution++
+        }
+
         // Sort Na população pelo fitness
-        populationList.sort(compararFitness)
+        populationList = populationList.sort(compararFitness)
 
         if (notHasSolution) {
             // var selectedParents = selectParentsByFitness(populationList)
@@ -190,9 +206,11 @@ while (count < ALGORITHM_RUNS) {
             // Retorna ja um individuo com fitness muito alto na cutAndCrossfill
             var crossOveredChildren = cutAndCrossfill(selectedParentsGenotipes)
             // console.log('Pais selecionados: ', selectedParents.length)
-            mutatedChildren = mutateGenes(crossOveredChildren)
+            var mutatedChildren = mutateGenes(crossOveredChildren)
+            // console.log('before: ', populationList, 'mutated: ', mutatedChildren)
+            populationList = replaceWorse(populationList, mutatedChildren)
         }
-        // console.log(fitnessList)
+        
         GENERATIONS_UNTIL_CONVERGE++
     }
     var timeOut = new Date()
@@ -205,7 +223,7 @@ while (count < ALGORITHM_RUNS) {
     count++
     console.log(`   Execução N: ${count}, Numero Maximo de gerações: ${MAX_GENERATIONS}, Numero Minimo de gerações: ${MIN_GENERATIONS}
     Gerações até convergir: ${GENERATIONS_UNTIL_CONVERGE}, Tempo maximo de execução: ${maxTime}, Tempo minimo de exercução: ${minTime},
-    Tempo médio de execução até agora: ${(timeAverage / count).toFixed(2)}, Encontrou solução: ${notHasSolution ? "Não" : "Sim"} \n`)
+    Tempo médio de execução até agora: ${(timeAverage / count).toFixed(2)}, Avaliações de Fitness: ${Fitness_evaluations}, Encontrou solução: ${notHasSolution ? "Não" : "Sim"} \n`)
 }
 
 console.log(`  Numero de execuções: ${count}, Numero Maximo de gerações: ${MAX_GENERATIONS}, Numero Minimo de gerações: ${MIN_GENERATIONS},
