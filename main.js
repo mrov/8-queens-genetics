@@ -1,3 +1,4 @@
+var fs = require('fs');
 // Modificação grande desse algoritmo para os anteriores é que cada board, além do genótipo, ele será um objeto composto de genótipo e fitness e outras variantes
 // Indv vai ser a abreviação para individuo nesse codigo
 // Exemplo de Indv: { board: [boardSize], fitness: 0-colisões }
@@ -9,12 +10,42 @@ const FITNESS_EVALUATIONS_LIMIT = 10000
 const FITNESS_THRESHOLD = 3
 const RANKING_LENGTH = 5
 const TOURNAMENT_PROBABILITY = .70
+const DATA_PATH = "./dataFolder/dataMain.csv"
+
+try {
+    fs.unlinkSync(DATA_PATH)
+    fs.closeSync(fs.openSync(DATA_PATH, 'w'));
+    //file removed
+} catch(err) {
+    console.error(err)
+}
 
 // Função para utilizar no sort
 function compararFitness (a,b) {
     if (a.fitness < b.fitness) { return -1 }
     if (a.fitness > b.fitness) { return 1 }
     return 0
+}
+
+function calculateStandardDeviation (currentPopulation, populationFitnessAverage) {
+    var standardDeviation = 0
+    var numerador = 0
+    currentPopulation.forEach((indv) => {
+        numerador += Math.pow(
+            indv.fitness - populationFitnessAverage,
+            2
+        )
+    });
+    return Math.sqrt(numerador/currentPopulation.length)
+}
+
+// Aqui calculo o desvio padrão da população também
+function calculatePopulationFitnessAverage (currentPopulation) {
+    var populationFitness = 0
+    currentPopulation.forEach((indv) => {
+        populationFitness += indv.fitness
+    })
+    return populationFitness / currentPopulation.length
 }
 
 // Vai ver quantas colisões tem para determinado board
@@ -176,13 +207,17 @@ while (count < ALGORITHM_RUNS) {
     var populationList = []
     var GENERATIONS_UNTIL_CONVERGE = 0
     var Fitness_evaluations = 0
+    var fitnessAverages = []
+    var standardDeviations = []
     // Criar a primeira geração
     for (let population = 0; population < POPULATION_QTY; population++) {
         populationList.push(generateRandom())
     }
     // Roda aleatoriamente até achar a solução
     while (notHasSolution && Fitness_evaluations < FITNESS_EVALUATIONS_LIMIT) {
-        
+        var fitnessAverage = 0
+        // fitness médio da população por iteração
+        // Desvio padrão
         if (populationList.some(function (indv) { return indv.fitness === 0 })) {
             // console.log(indv)
             notHasSolution = false
@@ -191,6 +226,12 @@ while (count < ALGORITHM_RUNS) {
 
         // Sort Na população pelo fitness
         populationList = populationList.sort(compararFitness)
+
+        var populationFitnessAverage = calculatePopulationFitnessAverage(populationList)
+
+        // Adiciono a média e calculo o desvio ja adicionando no array de desvios
+        fitnessAverages.push(populationFitnessAverage)
+        standardDeviations.push(calculateStandardDeviation(populationList, populationFitnessAverage))
 
         if (notHasSolution) {
             // Retorna apenas o genótipo na selectParents
@@ -216,6 +257,17 @@ while (count < ALGORITHM_RUNS) {
     MIN_GENERATIONS = Math.min(MIN_GENERATIONS, GENERATIONS_UNTIL_CONVERGE)
     AVG_GENERATIONS_UNTIL_CONVERGE += GENERATIONS_UNTIL_CONVERGE
     count++
+
+    if (!notHasSolution) {
+        try {
+            fs.writeFileSync(DATA_PATH, `Execução Numero: ${count}, \n`);
+            fs.appendFileSync(DATA_PATH, "fitnessAverage, " + fitnessAverages.toString() + "\n");
+            fs.appendFileSync(DATA_PATH, "standardDeviation, " + standardDeviations.toString() + "\n");
+        } catch (error) {
+            console.log('error')
+        }
+    }
+
     console.log(`   Execução N: ${count}, Numero Maximo de gerações: ${MAX_GENERATIONS}, Numero Minimo de gerações: ${MIN_GENERATIONS}
     Gerações até convergir: ${GENERATIONS_UNTIL_CONVERGE}, Tempo maximo de execução: ${maxTime}, Tempo minimo de exercução: ${minTime},
     Tempo médio de execução até agora: ${(timeAverage / count).toFixed(2)}, Avaliações de Fitness: ${Fitness_evaluations}, Encontrou solução: ${notHasSolution ? "Não" : "Sim"} \n`)
