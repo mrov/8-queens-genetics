@@ -8,17 +8,13 @@ const GENE_MUTATION_RATE = 40
 const FITNESS_EVALUATIONS_LIMIT = 10000
 const FITNESS_THRESHOLD = 3
 const RANKING_LENGTH = 5
+const TOURNAMENT_PROBABILITY = .70
 
 // Função para utilizar no sort
 function compararFitness (a,b) {
     if (a.fitness < b.fitness) { return -1 }
     if (a.fitness > b.fitness) { return 1 }
     return 0
-}
-
-// Algoritmo roleta para seleção dos parentes
-function roulleteSelection (currentPopulation) {
-
 }
 
 // Vai ver quantas colisões tem para determinado board
@@ -114,10 +110,27 @@ function selectParentsByRanking (currentPopulation) {
 // Algoritmo roleta para seleção dos parentes
 function roulleteSelection (currentPopulation) {
     var fitnessTotal = 0
+    var fullProb = 0
+    var selectedParentsGenotipes = []
     currentPopulation.forEach(indv => {
         fitnessTotal += indv.fitness
     });
-    console.log(fitnessTotal)
+    for (let individuals = 0; individuals < 2; individuals++) {
+        var r = Math.round(Math.random() * (fitnessTotal - 1))
+        var acumulador = 0
+        currentPopulation.forEach(indv => {
+            acumulador += indv.fitness
+            if (acumulador >= r) {
+                selectedParentsGenotipes.push(indv.board)
+            }
+        });
+    }
+    return selectedParentsGenotipes
+}
+
+// Torneio
+function tournamentSelection (currentPopulation) {
+    
 }
 
 function cutAndCrossfill (parentsGenotipes) {
@@ -171,9 +184,10 @@ while (count < ALGORITHM_RUNS) {
         populationList = populationList.sort(compararFitness)
 
         if (notHasSolution) {
-            // var selectedParents = selectParentsByFitness(populationList)
             // Retorna apenas o genótipo na selectParents
-            var selectedParentsGenotipes = selectParentsByRanking(populationList)
+            // var selectedParentsGenotipes = selectParentsByFitness(populationList)
+            // var selectedParentsGenotipes = selectParentsByRanking(populationList)
+            var selectedParentsGenotipes = roulleteSelection(populationList)
             // Retorna ja um individuo com fitness muito alto na cutAndCrossfill
             var crossOveredChildren = cutAndCrossfill(selectedParentsGenotipes)
             // console.log('Pais selecionados: ', selectedParents.length)
