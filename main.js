@@ -1,7 +1,7 @@
 // Modificação grande desse algoritmo para os anteriores é que cada board, além do genótipo, ele será um objeto composto de genótipo e fitness e outras variantes
 // Indv vai ser a abreviação para individuo nesse codigo
 // Exemplo de Indv: { board: [boardSize], fitness: 0-colisões }
-const POPULATION_QTY = 10
+const POPULATION_QTY = 30
 const BOARD_SIZE = 8
 const ALGORITHM_RUNS = 1000
 const GENE_MUTATION_RATE = 40
@@ -130,7 +130,16 @@ function roulleteSelection (currentPopulation) {
 
 // Torneio
 function tournamentSelection (currentPopulation) {
-    
+    var selectedParentsGenotipes = []
+    for (let individuals = 0; individuals < 2; individuals++) {
+        var possibleParentIndex = Math.round(Math.random() * (currentPopulation.length - 1))
+        var possibleParentIndex2 = Math.round(Math.random() * (currentPopulation.length - 1))
+        var r = Math.round(Math.random() * 100) / 100
+        // Como ja vem ordenado por fitness o menor indice é o melhor fitness e o maior indice é o pior fitness
+        if (r < TOURNAMENT_PROBABILITY) { selectedParentsGenotipes.push(currentPopulation[Math.min(possibleParentIndex, possibleParentIndex2)].board) }
+        else { selectedParentsGenotipes.push(currentPopulation[Math.max(possibleParentIndex, possibleParentIndex2)].board) }
+    }
+    return selectedParentsGenotipes
 }
 
 function cutAndCrossfill (parentsGenotipes) {
@@ -187,7 +196,8 @@ while (count < ALGORITHM_RUNS) {
             // Retorna apenas o genótipo na selectParents
             // var selectedParentsGenotipes = selectParentsByFitness(populationList)
             // var selectedParentsGenotipes = selectParentsByRanking(populationList)
-            var selectedParentsGenotipes = roulleteSelection(populationList)
+            // var selectedParentsGenotipes = roulleteSelection(populationList)
+            var selectedParentsGenotipes = tournamentSelection(populationList)
             // Retorna ja um individuo com fitness muito alto na cutAndCrossfill
             var crossOveredChildren = cutAndCrossfill(selectedParentsGenotipes)
             // console.log('Pais selecionados: ', selectedParents.length)
